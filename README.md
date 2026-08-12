@@ -42,13 +42,14 @@ ResQFood/
 ```
 
 ⚙️ Instalación
+```bash
 git clone <URL_DEL_REPOSITORIO>
 cd ResQFood
 
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 
-```bash
+
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
