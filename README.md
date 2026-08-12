@@ -23,16 +23,27 @@ Control de versiones: Git / GitHub.
 
 ResQFood/
 ├── accounts/       # Usuarios
+
 ├── api/            # API REST
+
 ├── core/           # Funcionalidades principales
+
 ├── marketplace/    # Comercios, packs, carrito y pedidos
+
 ├── packs/          # Gestión de packs
+
 ├── payments/       # Pagos
+
 ├── usuarios/       # Funcionalidades de usuarios
+
 ├── resqfood/       # Configuración Django
+
 ├── templates/      # Frontend
+
 ├── static/         # Recursos estáticos
+
 ├── manage.py
+
 └── requirements.txt
 
 ⚙️ Instalación
