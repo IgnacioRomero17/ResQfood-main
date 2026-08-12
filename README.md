@@ -20,21 +20,23 @@ Pagos: Mercado Pago.
 Deployment: Docker / Render.
 Control de versiones: Git / GitHub.
 📁 Estructura
-'''
+## 📁 Estructura del Proyecto
+
+```text
 ResQFood/
-├── accounts/       # Usuarios
-├── api/            # API REST
-├── core/           # Funcionalidades principales
-├── marketplace/    # Comercios, packs, carrito y pedidos
-├── packs/          # Gestión de packs
-├── payments/       # Pagos
-├── usuarios/       # Funcionalidades de usuarios
-├── resqfood/       # Configuración Django
-├── templates/      # Frontend
-├── static/         # Recursos estáticos
-├── manage.py
-└── requirements.txt
-'''
+├── accounts/          # Usuarios y autenticación
+├── api/               # Módulos y endpoints API REST
+├── core/              # Funcionalidades principales y vistas base
+├── marketplace/       # Comercios, packs, carrito y pedidos
+├── packs/             # Gestión de paquetes/ofertas
+├── payments/          # Pasarela de pagos y webhooks (Mercado Pago)
+├── usuarios/          # Perfiles de usuario
+├── resqfood/          # Configuración principal de Django (settings, urls)
+├── templates/         # Plantillas HTML (Frontend)
+├── static/            # Recursos estáticos (CSS, JS, Imágenes)
+├── manage.py          # Script de gestión de Django
+└── requirements.txt   # Dependencias del proyecto
+```
 ⚙️ Instalación
 git clone <URL_DEL_REPOSITORIO>
 cd ResQFood
