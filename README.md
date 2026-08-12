@@ -48,7 +48,9 @@ cd ResQFood
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 
+```bash
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
-Las credenciales y variables sensibles se gestionan mediante .env y no se incluyen en el repositorio.
+```
+Las credenciales y variables sensibles se gestionan mediante `.env` y no se incluyen en el repositorio.
