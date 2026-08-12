@@ -1,0 +1,192 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Nunito:wght@600;700;800&display=swap');
+  .section { margin: 24px auto; max-width: 1100px; padding: 0 16px; }
+  .section h2 { font-size: 1.25rem; margin: 0 0 12px; }
+  .hero { max-width:1100px; margin:16px auto; padding:0 16px; }
+  .hero-card{ background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:14px; font-family:'Inter','Segoe UI',system-ui,sans-serif; }
+  .hero-title{ font-size:1.6rem; font-weight:800; margin:0 0 6px; font-family:'Nunito','Segoe UI',system-ui,sans-serif; }
+  .hero-sub{ color:#6b7280; margin:0 0 16px; font-family:'Inter','Segoe UI',system-ui,sans-serif; }
+  .hero .btn{ font-family:'Inter','Segoe UI',system-ui,sans-serif; }
+  .grid-tiles { display:grid; gap:12px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 640px) { .grid-tiles { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 1100px){ .grid-tiles { grid-template-columns: repeat(6, 1fr); } }
+  .tile { display:flex; align-items:center; justify-content:center; flex-direction:column; background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:14px; text-align:center; transition: transform .15s ease, box-shadow .15s ease; text-decoration: none; color: inherit; }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.06); }
+  .tile .t { margin-top:8px; font-weight:700; font-size:.95rem; color:#111827; }
+
+  .card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; transition: box-shadow .15s ease, transform .15s ease; text-decoration:none; color:inherit; }
+  .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.06); transform: translateY(-2px); }
+  .thumb { aspect-ratio: 4/3; background:#f3f4f6; display:block; width:100%; object-fit:cover; }
+  .card-body { padding: 10px 12px; }
+
+  /* Carousel */
+  .carousel{ position:relative; padding:0 24px; }
+  .carousel-track{ display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:none; }
+  .carousel-track::-webkit-scrollbar{ display:none; }
+  .carousel-track > a.card{ min-width:240px; scroll-snap-align:start; }
+  @media (min-width:768px){ .carousel-track > a.card{ min-width:280px; } }
+  .carousel-btn{ position:absolute; top:50%; transform:translateY(-50%); border:1px solid var(--brand); background:#fff; color:var(--brand); width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; }
+  .carousel-btn.prev{ left:4px; }
+  .carousel-btn.next{ right:4px; }
+</style>
+
+<div class="hero">
+  <div class="hero-card">
+    <div class="hero-title">ResQFood</div>
+    <p class="hero-sub">Descubr&iacute; packs con descuento en comercios cercanos. Ahorr&aacute; y evit&aacute; desperdicios.</p>
+    <a class="btn" href="/packs/">Ver packs</a>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Explorar categor&iacute;as</h2>
+  <div class="grid-tiles">
+    {% for c in categories %}
+      <a class="tile" href="{{ c.url }}">
+        <img src="{{ c.img_url }}" alt="{{ c.title }}" class="thumb" style="aspect-ratio:1/1; width:100%; border-radius:12px;">
+        <div class="t">{{ c.title }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="section">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <h2>Lo m&aacute;s nuevo</h2>
+  </div>
+  <div class="carousel">
+    <button class="carousel-btn prev" type="button" aria-label="Anterior" data-target="#newest">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <button class="carousel-btn next" type="button" aria-label="Siguiente" data-target="#newest">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8.59 16.59 1.41 1.41L16 12 10 6 8.59 7.41 13.17 12z"/></svg>
+    </button>
+    <div id="newest" class="carousel-track">
+    {% for p in newest %}
+      <a class="card" href="/packs/{{ p.id }}/">
+        <img class="thumb" src="{{ p.image_or_stock_url }}" alt="{{ p.titulo|default:'Pack' }}" loading="lazy" decoding="async" data-placeholder="{% static 'img/placeholder-pack.svg' %}">
+        <div class="card-body">
+          <p class="title">{{ p.titulo|default:"Pack" }}</p>
+          <div class="meta" style="display:flex;justify-content:space-between;color:#6b7280;">
+            <span>${{ p.precio_oferta|default:p.precio_original }}</span>
+            <span>{{ p.partner.nombre }}</span>
+          </div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="muted" style="color:#6b7280;">Sin novedades por ahora.</div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <h2>Lo m&aacute;s comprado</h2>
+  </div>
+  <div class="carousel">
+    <button class="carousel-btn prev" type="button" aria-label="Anterior" data-target="#mostbought">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <button class="carousel-btn next" type="button" aria-label="Siguiente" data-target="#mostbought">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8.59 16.59 1.41 1.41L16 12 10 6 8.59 7.41 13.17 12z"/></svg>
+    </button>
+    <div id="mostbought" class="carousel-track">
+    {% for p in most_bought %}
+      <a class="card" href="/packs/{{ p.id }}/">
+        <img class="thumb" src="{{ p.image_or_stock_url }}" alt="{{ p.titulo|default:'Pack' }}" loading="lazy" decoding="async" data-placeholder="{% static 'img/placeholder-pack.svg' %}">
+        <div class="card-body">
+          <p class="title">{{ p.titulo|default:"Pack" }}</p>
+          <div class="meta" style="display:flex;justify-content:space-between;color:#6b7280;">
+            <span>${{ p.precio_oferta|default:p.precio_original }}</span>
+            <span>{{ p.partner.nombre }}</span>
+          </div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="muted" style="color:#6b7280;">A&uacute;n no hay m&aacute;s comprados.</div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <h2>Te podr&iacute;a interesar</h2>
+  </div>
+  <div class="carousel">
+    <button class="carousel-btn prev" type="button" aria-label="Anterior" data-target="#suggested">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+    <button class="carousel-btn next" type="button" aria-label="Siguiente" data-target="#suggested">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8.59 16.59 1.41 1.41L16 12 10 6 8.59 7.41 13.17 12z"/></svg>
+    </button>
+    <div id="suggested" class="carousel-track">
+      {% for p in newest %}
+      <a class="card" href="/packs/{{ p.id }}/">
+        <img class="thumb" src="{{ p.image_or_stock_url }}" alt="{{ p.titulo|default:'Pack' }}" loading="lazy" decoding="async">
+        <div class="card-body">
+          <p class="title">{{ p.titulo|default:"Pack" }}</p>
+          <div class="meta" style="display:flex;justify-content:space-between;color:#6b7280;">
+            <span>${{ p.precio_oferta|default:p.precio_original }}</span>
+            <span>{{ p.partner.nombre }}</span>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+        <div class="muted" style="color:#6b7280;">Pronto m&aacute;s sugerencias.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function byId(id){ return document.querySelector(id); }
+  function scrollTrack(id, dir){
+    const el = byId(id); if(!el) return;
+    const amount = Math.max(el.clientWidth * 0.9, 260);
+    el.scrollBy({ left: dir * amount, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.carousel-btn.prev').forEach(btn => {
+    btn.addEventListener('click', () => scrollTrack(btn.dataset.target, -1));
+  });
+  document.querySelectorAll('.carousel-btn.next').forEach(btn => {
+    btn.addEventListener('click', () => scrollTrack(btn.dataset.target, 1));
+  });
+
+  // Fallback aleatorio de imÃ¡genes para packs sin foto
+  const STOCK_POOL = [
+    "{% static 'img/stock/verduleria/1.jpg' %}",
+    "{% static 'img/stock/verduleria/2.jpeg' %}",
+    "{% static 'img/stock/verduleria/3.jpg' %}",
+    "{% static 'img/stock/cafes/1.jpg' %}",
+    "{% static 'img/stock/cafes/2.jpg' %}",
+    "{% static 'img/stock/supermercados/1.jpg' %}",
+    "{% static 'img/stock/supermercados/2.jpg' %}",
+    "{% static 'img/stock/supermercados/3.jpg' %}",
+    "{% static 'img/stock/carniceria/2.jpeg' %}",
+    "{% static 'img/stock/carniceria/3.webp' %}",
+    "{% static 'img/stock/helados/1.png' %}",
+    "{% static 'img/stock/helados/2.jpeg' %}",
+    "{% static 'img/stock/helados/3.jpeg' %}",
+    "{% static 'img/stock/panaderia/057298fd6dce58a10868606e37cb774e.jpg' %}",
+    "{% static 'img/stock/panaderia/panes.jpg' %}",
+  ];
+  function pick(){ return STOCK_POOL[Math.floor(Math.random()*STOCK_POOL.length)]; }
+  document.querySelectorAll('.carousel-track img').forEach(img => {
+    function swap(){ img.src = pick(); }
+    img.addEventListener('error', swap, { once: true });
+    try { if ((img.currentSrc||img.src||'').includes('placeholder-pack.svg')) swap(); } catch(e){}
+  });
+})();
+</script>
+
+{% endblock %}
+

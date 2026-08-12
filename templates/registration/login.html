@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Ingresar{% endblock %}
+{% block content %}
+<style>
+  .wrap{ max-width:420px; margin:16px auto; padding:0 16px; }
+  .card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; }
+  .title{ margin:0 0 8px; font-weight:800; font-size:1.4rem; color:#f59e0b; }
+  .field{ margin:10px 0; }
+  .label{ display:block; font-weight:600; margin-bottom:6px; color:#374151; }
+  .input{ width:100%; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; font-size:1rem; }
+  .card{ overflow:visible; }
+  .help{ color:#6b7280; font-size:.92rem; }
+  .actions{ display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .btn{ border:1px solid var(--brand); border-radius:10px; padding:10px 12px; background:var(--brand); color:#fff; cursor:pointer; font-weight:700; text-decoration:none; display:inline-block }
+  .btn.secondary{ background:#fff; color:var(--brand); border:1px solid var(--brand); }
+  .link{ color:#2563eb; text-decoration:none; }
+  .muted{ color:#6b7280; }
+  .sep{ height:1px; background:#e5e7eb; margin:12px 0; }
+  .form-errors{ color:#b91c1c; margin:6px 0; }
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <h1 class="title">Ingresar</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="field">
+        <label class="label" for="id_username">Email o usuario</label>
+        <input class="input" type="text" name="username" id="id_username" required value="{{ form.username.value|default_if_none:'' }}">
+        {{ form.username.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="id_password">Contraseña</label>
+        <input class="input" type="password" name="password" id="id_password" required>
+        {{ form.password.errors }}
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn">Ingresar</button>
+        <label class="muted"><input type="checkbox" name="remember_me"> Recordarme</label>
+      </div>
+    </form>
+
+    <div class="sep"></div>
+    <p class="muted"><a class="link" href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a></p>
+    <p class="muted"><a class="link" href="{% url 'signup' %}">¿No tenés cuenta?</a></p>
+  </div>
+</div>
+{% endblock %}

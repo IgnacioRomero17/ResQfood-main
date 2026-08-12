@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Simular pago{% endblock %}
+
+{% block content %}
+  <div style="background:#ffefc5;padding:8px;border:1px solid #e0b800; margin-bottom:12px;">
+      ⚠️ DEV ONLY: This page simulates MercadoPago. Not used in production.
+  </div>
+  <h1>Simular pago (sandbox local)</h1>
+  <p>Pedido #{{ order.id }} — {{ order.pack.titulo }} — ${{ order.precio_pagado }}</p>
+  {% if order.estado == 'pagado' %}
+    <p>Este pedido ya está pagado.</p>
+    <a class="btn" href="{% url 'order_detail_public' order.id %}?from=cart">Volver al pedido</a>
+  {% else %}
+    <form method="post" action="{% url 'mp_mock_approve' order.id %}">
+      {% csrf_token %}
+      <button class="btn" type="submit">Aprobar pago</button>
+    </form>
+  {% endif %}
+{% endblock %}

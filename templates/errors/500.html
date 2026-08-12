@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Error del servidor (500){% endblock %}
+{% block content %}
+<div class="wrap">
+  {% include "partials/empty.html" with title="Ocurrió un error" subtitle="Ya estamos trabajando para resolverlo." cta_href="/" cta_label="Volver al inicio" %}
+</div>
+{% endblock %}

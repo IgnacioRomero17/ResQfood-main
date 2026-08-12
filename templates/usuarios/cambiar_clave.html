@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Cambiar contraseña{% endblock %}
+{% block content %}
+<style>
+.wrap{max-width:600px;margin:16px auto;padding:0 16px;}
+h1{font-size:1.6rem;font-weight:800;margin-bottom:12px;}
+.wrap form{display:flex;flex-direction:column;gap:10px;}
+.wrap label{font-weight:600;}
+.wrap input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:1rem;}
+.btn{border:none;border-radius:10px;padding:10px 14px;font-weight:700;background:#2563eb;color:#fff;cursor:pointer;}
+.msg{margin:10px 0;padding:8px 12px;border-radius:10px;}
+.msg.success{background:#ecfdf5;border:1px solid #86efac;}
+.msg.error{background:#fef2f2;border:1px solid #fecaca;}
+</style>
+
+<div class="wrap">
+  <h1>Cambiar contraseña</h1>
+
+  {% for m in messages %}
+    <div class="msg {% if m.tags %}{{ m.tags }}{% endif %}">{{ m }}</div>
+  {% endfor %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Actualizar contraseña</button>
+  </form>
+
+  <div style="margin-top:16px;">
+    <a href="{% url 'mi_cuenta' %}" class="btn" style="background:#fff;color:#2563eb;border:1px solid #2563eb;">Volver</a>
+  </div>
+</div>
+{% endblock %}

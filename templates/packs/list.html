@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}Explorar packs · ResQFood{% endblock %}
+
+{% block content %}
+<h1 style="margin:8px 0 12px 0;">Explorar packs</h1>
+
+<style>
+  /* Aspect ratio consistente para cards al volver desde detalle */
+  #lista a { display:block; border:1px solid #eee; border-radius:12px; overflow:hidden; background:#fff; text-decoration:none; color:inherit; }
+  #lista img { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; background:#f3f4f6; }
+  #paginacion button { border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px; background:#fff; cursor:pointer; }
+  #filtros label{ font-size:.9rem; color:#6b7280; }
+  #filtros input, #filtros select { border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; }
+</style>
+
+<!-- Estilos para agrupar link + botón dentro de una sola card del grid -->
+<style>
+  #lista > .card-item { border:1px solid #eee; border-radius:12px; overflow:hidden; background:#fff; display:flex; flex-direction:column; }
+  #lista > .card-item > a.card-link { text-decoration:none; color:inherit; display:block; }
+  #lista > .card-item img { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; background:#f3f4f6; }
+  #lista > .card-item .card-actions { padding:12px; border-top:1px solid #eee; }
+  #lista > .card-item .card-actions button { border:1px solid #e5e7eb; border-radius:8px; padding:6px 10px; background:#fff; cursor:pointer; }
+  .cart-msg{margin:10px 0;padding:10px 12px;border-radius:12px;border:1px solid #fde68a;background:#fffbeb;color:#92400e;display:none;}
+  .cart-msg.ok{border-color:#86efac;background:#ecfdf5;color:#065f46;}
+  .cart-msg.err{border-color:#fecaca;background:#fef2f2;color:#991b1b;}
+  .cart-msg-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+  .cart-msg-actions button{border:1px solid #e5e7eb;background:#fff;padding:6px 10px;border-radius:10px;cursor:pointer;font-weight:600;}
+</style>
+
+<form id="filtros" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:end; margin: .5rem 0 1rem;">
+  <div>
+    <label>Buscar</label><br>
+    <input type="text" name="search" placeholder="título, etiqueta, comercio…" />
+  </div>
+
+  <div>
+    <label>Ordenar</label><br>
+    <select name="ordering">
+      <option value="-creado_at">Más recientes</option>
+      <option value="precio_oferta">Precio ↑</option>
+      <option value="-precio_oferta">Precio ↓</option>
+    </select>
+  </div>
+
+  <div>
+    <label>Etiqueta</label><br>
+    <select name="etiqueta">
+      <option value="">Todas</option>
+      <option value="excedente">Excedente</option>
+      <option value="por vencer">Por vencer</option>
+    </select>
+  </div>
+
+  <div>
+    <label>Partner (ID)</label><br>
+    <input type="number" name="partner" min="1" placeholder="ej: 2" />
+  </div>
+
+  <button type="submit">Aplicar</button>
+  <button id="limpiar" type="button">Limpiar</button>
+</form>
+
+<p id="ubicacionInfo" style="color:#666; font-size:14px; margin-top:-6px;"></p>
+<div id="cart-msg" class="cart-msg" role="status" aria-live="polite"></div>
+
+<div id="lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+<div id="paginacion" style="display:flex;gap:.5rem;margin:1rem 0;"></div>
+
+<script>
+  // ===== Utilidades =====
+  const money = x => {
+    try { return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(x); }
+    catch { return `$${x}`; }
+  };
+  const qs = new URLSearchParams(location.search);
+  function setFormFromQS(form) {
+    for (const [k,v] of qs.entries()) {
+      const el = form.elements[k];
+      if (!el) continue;
+      if (el.tagName === "SELECT" || el.tagName === "INPUT") el.value = v;
+    }
+  }
+  function formToQS(form) {
+    const p = new URLSearchParams(new FormData(form));
+    for (const [k,v] of Array.from(p.entries())) if (v === "") p.delete(k);
+    return p.toString();
+  }
+
+  // ===== UI =====
+  function cardTpl(p){
+    const partner = p["partner-nombre"] || p.partner_nombre || "-";
+    const t = p.titulo || p.nombre || "Pack";
+    const pOrig = p.precio_original ?? p.precio ?? null;
+    const pOfer = p.precio_oferta ?? p.precio ?? null;
+    const etiqueta = p.etiqueta ? `<span style="background:#f3f4f6;padding:2px 8px;border-radius:999px;font-size:12px">${p.etiqueta}</span>` : "";
+    return `
+      <a href="/packs/${p.id}/">
+        <img src="${p.imagen_url || 'https://picsum.photos/seed/'+p.id+'/1200/900'}" alt="">
+        <div style="padding:12px">
+          <div>${etiqueta}</div>
+          <h3 style="margin:8px 0 4px 0">${t}</h3>
+          <div style="color:#666; font-size:14px; margin-bottom:6px">${partner}</div>
+          <div style="font-weight:800">
+            ${pOrig && pOfer && pOrig != pOfer
+              ? `<span style="color:#999;text-decoration:line-through;margin-right:6px">${money(pOrig)}</span> ${money(pOfer)}`
+              : `${money(pOfer ?? pOrig ?? 0)}`}
+          </div>
+        </div>
+      </a>`;
+  }
+
+  function render(items) {
+    const cont = document.getElementById("lista");
+    cont.innerHTML = items.length ? items.map(cardTpl).join("") : "<p>Sin resultados.</p>";
+    // Inyectar botón Agregar al carrito debajo de cada tarjeta
+    cont.querySelectorAll('a[href^="/packs/"]').forEach(a => {
+      const m = a.getAttribute('href').match(/\/packs\/(\d+)\/?/);
+      if(!m) return;
+      const id = parseInt(m[1], 10);
+      const btnWrap = document.createElement('div');
+      btnWrap.style.padding = '12px';
+      btnWrap.style.borderTop = '1px solid #eee';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Agregar al carrito';
+      btn.onclick = () => addToCart(id);
+      btnWrap.appendChild(btn);
+      a.parentElement.appendChild(btnWrap);
+    });
+  }
+
+  function renderPaginacion(next, prev) {
+    const cont = document.getElementById("paginacion");
+    cont.innerHTML = "";
+    const mk = (label, url) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.disabled = !url;
+      if (url) b.onclick = () => cargar(url);
+      return b;
+    };
+    cont.appendChild(mk("« Anterior", prev));
+    cont.appendChild(mk("Siguiente »", next));
+  }
+
+  // ===== Carga =====
+  let currentURL = "/api/packs/?vigentes=1";
+  async function cargar(url) {
+    const res = await fetch(url || currentURL);
+    if (!res.ok) { document.getElementById("lista").innerHTML = `<p>Error ${res.status}</p>`; return; }
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.results || []);
+    render(items);
+    renderPaginacion(data.next || null, data.previous || null);
+    // actualizar la URL del listado si cambio de página
+    if (url) currentURL = url;
+  }
+
+  // ===== Inicio =====
+  // Info de ubicación
+  const u = localStorage.getItem("rf_ubicacion");
+  if (u) document.getElementById("ubicacionInfo").textContent = `Resultados para: ${u}`;
+
+  // Pre-cargar form desde la URL y disparar búsqueda
+  const form = document.getElementById("filtros");
+  setFormFromQS(form);
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const q = formToQS(form);
+    const url = "/api/packs/?" + (q ? `vigentes=1&${q}` : "vigentes=1");
+    currentURL = url;
+    history.replaceState(null, "", "/packs/" + (q ? `?${q}` : ""));
+    cargar(url);
+  });
+  document.getElementById("limpiar").onclick = () => {
+    form.reset();
+    history.replaceState(null, "", "/packs/");
+    currentURL = "/api/packs/";
+    cargar();
+  };
+
+  // Carga inicial según la URL actual
+  const initialQ = qs.toString();
+  currentURL = "/api/packs/?" + (initialQ ? `vigentes=1&${initialQ}` : "vigentes=1");
+  cargar(currentURL);
+
+  // Normaliza DOM: envuelve cada <a> en un contenedor y agrega el botón dentro de la misma card
+  function fixButtons(){
+    const cont = document.getElementById('lista');
+    if (!cont) return;
+    // eliminar botones sueltos agregados como hermanos en el grid
+    Array.from(cont.children).forEach(ch => {
+      if (ch.tagName === 'DIV' && ch.querySelector('button') && !ch.classList.contains('card-item')) {
+        cont.removeChild(ch);
+      }
+    });
+    // envolver anchors y añadir botón
+    Array.from(cont.querySelectorAll(':scope > a[href^="/packs/"]')).forEach(a => {
+      if (a.parentElement && a.parentElement.classList.contains('card-item')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'card-item';
+      a.classList.add('card-link');
+      cont.insertBefore(wrap, a);
+      wrap.appendChild(a);
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Agregar al carrito';
+      const m = a.getAttribute('href').match(/\/packs\/(\d+)\/?/);
+      if (m) {
+        const id = parseInt(m[1], 10);
+        btn.addEventListener('click', () => addToCart(id));
+      }
+      actions.appendChild(btn);
+      wrap.appendChild(actions);
+    });
+  }
+
+  // Repara después de cada render
+  const target = document.getElementById('lista');
+  if (target) {
+    const mo = new MutationObserver(() => fixButtons());
+    mo.observe(target, { childList: true });
+  }
+  // Primer pasada
+  fixButtons();
+
+  // Nudge de layout al volver con bfcache (previene columnas "mobile")
+  window.addEventListener('pageshow', () => {
+    const l = document.getElementById('lista');
+    if (!l) return;
+    const prev = l.style.gridTemplateColumns;
+    l.style.gridTemplateColumns = 'repeat(auto-fill,minmax(261px,1fr))';
+    requestAnimationFrame(() => {
+      l.style.gridTemplateColumns = prev || 'repeat(auto-fill,minmax(260px,1fr))';
+    });
+  });
+
+  // CSRF helper + cart add
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+  function showCartMessage(text, type, actions){
+    const box = document.getElementById('cart-msg');
+    if(!box) return;
+    box.style.display = 'block';
+    box.className = 'cart-msg' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+    box.innerHTML = '';
+    const span = document.createElement('div');
+    span.textContent = text;
+    box.appendChild(span);
+    if(actions && actions.length){
+      const wrap = document.createElement('div');
+      wrap.className = 'cart-msg-actions';
+      actions.forEach(function(action){
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = action.label;
+        b.onclick = action.onClick;
+        wrap.appendChild(b);
+      });
+      box.appendChild(wrap);
+    }
+  }
+  async function clearAndRetry(packId){
+    await fetch('/api/cart/clear/', { method:'POST', headers:{'X-CSRFToken': getCookie('csrftoken')}, credentials:'same-origin' });
+    return addToCart(packId);
+  }
+  async function addToCart(packId){
+    try{
+      const res = await fetch('/api/cart/add/', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        credentials: 'same-origin',
+        body: JSON.stringify({ pack_id: packId })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(res.status === 401 || res.status === 403){
+        window.location = '{% url "login" %}?next=' + encodeURIComponent(location.pathname + location.search);
+        return;
+      }
+      if(!res.ok){
+        const msg = (data && data.detail) ? data.detail : 'No se pudo agregar.';
+        if(/mismo comercio/i.test(msg)){
+          showCartMessage(msg, 'warn', [{
+            label: 'Vaciar carrito e intentar de nuevo',
+            onClick: () => clearAndRetry(packId)
+          }]);
+        }else{
+          showCartMessage(msg, 'err');
+        }
+        return;
+      }
+      if(data && typeof data.item_count !== 'undefined'){
+        if(window.updateCartBadge) updateCartBadge(data.item_count);
+      }
+      showCartMessage('Agregado al carrito', 'ok');
+    }catch(e){ showCartMessage('Error de red', 'err'); }
+  }
+</script>
+{% endblock %}

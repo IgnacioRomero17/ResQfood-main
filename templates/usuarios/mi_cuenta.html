@@ -1,0 +1,38 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% block title %}Mi Cuenta{% endblock %}
+
+{% block content %}
+<style>
+.wrap{max-width:700px;margin:16px auto;padding:0 16px;}
+h1{font-size:1.6rem;font-weight:800;margin-bottom:12px;color:#f59e0b;}
+.wrap form{display:flex;flex-direction:column;gap:10px;}
+.wrap label{font-weight:600;}
+.input{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;font-size:1rem;}
+.wrap .btn{border:1px solid var(--brand);border-radius:10px;padding:10px 14px;font-weight:700;background:var(--brand);color:#fff;cursor:pointer;text-decoration:none;display:inline-block;}
+.wrap .btn.secondary{background:#fff;color:var(--brand);border:1px solid var(--brand);} 
+.msg{margin:10px 0;padding:8px 12px;border-radius:10px;}
+.msg.success{background:#ecfdf5;border:1px solid #86efac;}
+.msg.error{background:#fef2f2;border:1px solid #fecaca;}
+</style>
+
+<div class="wrap">
+  <h1>Mi cuenta</h1>
+
+  {% for m in messages %}
+    {# mensajes ya se muestran en base; evitamos duplicados #}
+  {% endfor %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Guardar cambios</button>
+  </form>
+
+  <div style="margin-top:16px;">
+    <a href="{% url 'cambiar_clave' %}" class="btn secondary">Cambiar contrase&ntilde;a</a>
+  </div>
+</div>
+{% endblock %}
+
+

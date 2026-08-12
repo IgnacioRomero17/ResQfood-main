@@ -1,0 +1,276 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}ResQFood{% endblock %}</title>
+  {% load static %}
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#f7fbea; --text:#111; --muted:#666; --brand:#22c55e; }
+    html, body{ height:100%; }
+    body {  margin:0; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+      min-height:100vh; display:flex; flex-direction:column;  padding-top:64px; }
+    main{ flex:1; }
+    .container{ max-width:1200px; margin:0 auto; padding:0 16px; }
+    .nav{ position:fixed; top:0; left:0; right:0; background:#fff; border-bottom:1px solid #eee; z-index:1000; margin:0 }
+    .nav-inner{ display:flex; gap:12px; align-items:center; height:64px }
+    .nav-inner form{ margin:0; }
+    .nav-auth{ display:flex; gap:12px; align-items:center; margin-left:auto; }
+    .nav-auth .plain-link{ color:var(--brand); font-weight:600; text-decoration:none; padding:4px 0; transition:transform .18s ease, color .18s ease; }
+    .nav-auth .plain-link:hover{ color:#16a34a; transform:translateY(-2px); }
+    .nav-auth .pill-btn{ border:none; border-radius:999px; padding:8px 20px; background:var(--brand); color:#fff; font-weight:600; font-size:.92rem; text-decoration:none; box-shadow:0 12px 24px rgba(34,197,94,.2); transition:transform .18s ease, box-shadow .18s ease; display:inline-flex; align-items:center; justify-content:center; }
+    .nav-auth .pill-btn:hover{ transform:translateY(-4px) scale(1.05); box-shadow:0 22px 36px rgba(34,197,94,.35); }
+    /* No estirar los icon buttons; solo aplicar a botones de texto */
+    .nav-inner .btn:not(.icon-btn){ height:40px; display:inline-flex; align-items:center; padding:0 12px; line-height:1; }
+    .nav-inner .icon-btn{ width:40px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+    .searchbar{ flex:1; display:flex; align-items:center; border:1px solid #eee; border-radius:999px; padding:8px 12px; gap:8px; height:40px }
+    .searchbar input{ border:none; outline:none; flex:1; font-size:14px; height:100%; }
+    .logo{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:22px; color:var(--brand); text-decoration:none; margin-right:16px; }
+    .chip{ display:inline-flex; gap:6px; align-items:center; color:#1f2937; background:transparent; border:none; padding:0; cursor:pointer; font-weight:500; margin-right:16px; transition:transform .18s ease; }
+    .chip svg{ width:18px; height:18px; color:#111827; }
+    .chip:hover{ transform:translateY(-2px); }
+    .searchbar{ flex:0 1 50%; min-width:320px; display:flex; align-items:center; border:1px solid #e5e7eb; border-radius:999px; padding:4px 12px; gap:8px; height:38px; background:#f8f8f8; margin:0 auto; }
+    .searchbar .icon{ color:#6b7280; display:inline-flex; align-items:center; justify-content:center; }
+    .searchbar .icon svg{ width:18px; height:18px; }
+    .searchbar input{ border:none; background:transparent; outline:none; flex:1; font-size:14px; height:100%; padding:0 6px; color:#374151; }
+    .btn{ border:1px solid var(--brand); border-radius:10px; padding:8px 12px; background:var(--brand); color:#fff; cursor:pointer; font-weight:700; text-decoration:none; display:inline-block; transition:transform .18s ease, box-shadow .18s ease; }
+    .btn:hover{ transform:translateY(-3px) scale(1.04); box-shadow:0 12px 20px rgba(34,197,94,.25); }
+    .icon-btn{ width:40px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:#fff; color:var(--brand); border-color:var(--brand); transition:transform .18s ease, box-shadow .18s ease; }
+    .icon-btn:hover{ background:#f8fff9; transform:translateY(-3px) scale(1.08); box-shadow:0 10px 18px rgba(34,197,94,.25); }
+    .section{ padding:24px 0 } .section h2{ margin:0 0 12px 0 }
+    .scroll-x{ display:flex; gap:12px; overflow:auto; padding-bottom:4px; scrollbar-width:thin }
+    .card{ min-width:280px; border:1px solid #eee; border-radius:12px; overflow:hidden; background:#fff }
+    .card img{ width:100%; height:150px; object-fit:cover; display:block }
+    .card .p{ padding:12px } .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:#f3f4f6; color:#111; font-size:12px }
+    .price{ font-weight:800 } .line{ color:#999; text-decoration:line-through; margin-right:6px }
+    .grid-chips{ display:flex; flex-wrap:wrap; gap:8px }
+    @media (max-width:768px){ .card{ min-width:220px } }
+    :root{ --card-bg:#fff; --card-bd:#e5e7eb; --card-r:14px; --muted:#6b7280; --ink:#111827; --brand:#22c55e;
+      --ok:#10b981; --warn:#f59e0b; --err:#ef4444; --shadow:0 6px 22px rgba(0,0,0,.08); }
+    .card{ position:relative; background:var(--card-bg); border:1px solid var(--card-bd); border-radius:20px; overflow:hidden;
+      transition:transform .18s cubic-bezier(.25,.8,.25,1), box-shadow .2s ease, border-color .2s ease, filter .2s ease;
+      will-change:transform,box-shadow; }
+    .card::after{ content:""; position:absolute; left:8%; right:8%; bottom:-18px; height:25px; border-radius:50%; background:radial-gradient(ellipse at center, rgba(0,0,0,.35), transparent 65%);
+      opacity:0; transition:opacity .18s ease; pointer-events:none; }
+    .card:hover{ transform:translateY(-14px) scale(1.025); box-shadow:0 20px 45px rgba(15,23,42,.25); border-color:#d1d5db; filter:brightness(1.01); }
+    .card:hover::after{ opacity:1; }
+    .card-body{ padding:10px 12px } .title{ font-weight:700; color:var(--ink); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .meta{ color:var(--muted); font-size:.92rem; display:flex; justify-content:space-between; gap:8px; align-items:center }
+    .price{ color:var(--ink); font-weight:800; letter-spacing:.1px }
+    .price s{ color:#9ca3af; font-weight:500; margin-left:6px }
+    .thumb{ width:100%; display:block; background:#f3f4f6; border-bottom:1px solid var(--card-bd); aspect-ratio:4/3; object-fit:cover; transition:filter .25s ease, transform .25s ease; }
+    .card:hover .thumb{ filter:brightness(.75); transform:scale(1.06); }
+    .badge{ font-size:.85rem; border-radius:999px; padding:4px 8px; border:1px solid var(--card-bd) }
+    .pill{ transition:transform .18s ease; }
+    .pill:hover{ transform:translateY(-3px) scale(1.05); }
+    .b-ok{ background:#ecfdf5; border-color:#86efac } .b-warn{ background:#fffbeb; border-color:#fde68a }
+    .b-err{ background:#fef2f2; border-color:#fecaca }
+    a.link{ text-decoration:none; color:inherit; display:block }
+    a.card{ text-decoration:none; color:inherit; display:block }
+    a.card:hover{ text-decoration:none }
+    :where(a,button,select,input):focus-visible{ outline:2px solid var(--brand); outline-offset:2px; border-radius:8px }
+    .skeleton{ position:relative; overflow:hidden; background:#f3f4f6 }
+    .skeleton::after{ content:""; position:absolute; inset:0; transform:translateX(-100%);
+      background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 100%); animation:sheen 1.2s infinite }
+    @keyframes sheen{ 100%{ transform:translateX(100%)} }
+
+    /* Footer */
+    .footer{ margin-top:24px; background:#fff; border-top:1px solid #eee; }
+    .footer-inner{ display:grid; gap:32px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); padding:24px 0; align-items:flex-start; }
+    .f-title{ font-weight:800; margin-bottom:8px; color: var(--brand); }
+    .f-text{ color:#6b7280; margin:0; }
+    .f-links{ display:flex; flex-direction:column; gap:6px; }
+    .footer a{ text-decoration:none; color:inherit; }
+    .footer a:hover{ text-decoration:none; }
+    .footer-copy{ text-align:center; color:#6b7280; padding:12px 0; border-top:1px solid #f3f4f6; font-size:.9rem; }
+
+    /* Modal ubicacion */
+    .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:1200; pointer-events:none; opacity:0; transition:opacity .18s ease; }
+    .modal.open{ pointer-events:auto; opacity:1; }
+    .modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.4); }
+    .modal-dialog{ position:relative; background:#fff; border-radius:14px; padding:18px; box-shadow:0 16px 42px rgba(0,0,0,.18); width:90%; max-width:380px; z-index:1; }
+    .modal-dialog h3{ margin:0 0 6px; font-size:1.05rem; }
+    .modal-dialog p{ margin:0 0 12px; color:#4b5563; font-size:.95rem; }
+    .modal-dialog input{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; font-size:1rem; box-sizing:border-box; }
+    .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
+    .btn-ghost{ border:1px solid #e5e7eb; background:#fff; color:#111; }
+  </style>
+  <script>
+    // Fallback de imágenes
+    window.addEventListener('error', function(e){
+      if (e.target && e.target.tagName === 'IMG'){
+        const img = e.target;
+        if (!img.dataset.fallback){
+          img.dataset.fallback = '1';
+          const ph = img.getAttribute('data-placeholder') || "{% static 'img/placeholder-pack.svg' %}";
+          img.src = ph;
+        }
+      }
+    }, true);
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="logo" href="{% url 'home' %}">ResQFood</a>
+
+      <button class="chip" id="btn-ubicacion" type="button" aria-label="Elegir ubicación">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-4.35-6-10a6 6 0 0 1 12 0c0 5.65-6 10-6 10Z"/><circle cx="12" cy="11" r="2.5"/></svg>
+        <span id="ubicacion-label">Córdoba</span>
+      </button>
+
+      <form class="searchbar" action="{% url 'search' %}" method="get">
+        <input type="search" id="q" name="q" placeholder="¿Qué quieres rescatar?" />
+        <button aria-label="Buscar" type="submit" style="border:none;background:transparent;display:inline-flex;align-items:center;justify-content:center;">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
+          </span>
+        </button>
+      </form>
+
+      <div class="nav-auth" style="gap:20px;">
+        {% if user.is_authenticated %}
+          <a class="btn icon-btn" href="{% url 'mi_cuenta' %}" aria-label="Mi cuenta" title="Mi cuenta">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.97 0-8 2.239-8 4v2h16v-2c0-1.761-3.03-4-8-4Z"/></svg>
+          </a>
+          <a class="btn icon-btn" href="{% url 'my_orders' %}" aria-label="Mis pedidos" title="Mis pedidos">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M6 3h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Z" opacity=".15"/><path d="M6 3h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Zm0 2v11.382l2-.999 4 2 4-2 2 1V5H6Z"/></svg>
+          </a>
+          <a class="btn icon-btn" href="{% url 'cart' %}" aria-label="Mi carrito" title="Mi carrito" style="position:relative;">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M7 4h-2l-1 2v1h2l3.6 7.59-1.35 2.45A1 1 0 0 0 9.8 19h9.4v-2H10.62l.9-1.63h6.68a1 1 0 0 0 .92-.62l3-7A1 1 0 0 0 21.2 6H7.42L7 5.2V4Z"/></svg>
+            <span id="cart-badge" class="pill" style="position:absolute; top:-6px; right:-6px; background:#fff; color:var(--brand); border-color:#fff; font-weight:700;">{{ cart_count|default:0 }}</span>
+          </a>
+          <form action="{% url 'logout' %}" method="post" style="display:inline">
+            {% csrf_token %}
+            <button class="btn icon-btn" type="submit" aria-label="Salir de la cuenta" title="Salir">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M10 3a2 2 0 0 0-2 2v4h2V5h8v14h-8v-4H8v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-8Z"/><path d="M11 12H4m0 0 3-3m-3 3 3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+          </form>
+        {% else %}
+          <a class="plain-link" href="{% url 'login' %}?next={{ request.path }}">Ingresar</a>
+          <a class="pill-btn" href="{% url 'signup' %}">Registrarse</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="container" style="margin:12px 0">
+        {% for message in messages %}
+          <div style="padding:8px 12px; border:1px solid #eee; border-left:4px solid #2d6; border-radius:8px; margin-bottom:6px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Ubicación simple (localStorage) - espera al DOM para que existan los nodos del modal
+    document.addEventListener("DOMContentLoaded", function(){
+      const ubicKey = "rf_ubicacion";
+      const label = document.getElementById("ubicacion-label");
+      const guardada = localStorage.getItem(ubicKey);
+      if (guardada && label) label.textContent = guardada;
+
+      const modal = document.getElementById("ubic-modal");
+      const input = document.getElementById("ubic-input");
+      const btnSave = document.getElementById("ubic-save");
+      const btnCancel = document.getElementById("ubic-cancel");
+      const btnToggle = document.getElementById("btn-ubicacion");
+      if (!modal || !input || !btnSave || !btnCancel || !btnToggle || !label) return;
+
+      function closeModal(){ modal.classList.remove("open"); }
+      function openModal(){
+        modal.classList.add("open");
+        input.value = label.textContent || "";
+        setTimeout(() => input.focus(), 50);
+      }
+      function saveUbicacion(){
+        const nueva = (input.value || "").trim();
+        if (nueva) { localStorage.setItem(ubicKey, nueva); label.textContent = nueva; }
+        closeModal();
+      }
+
+      btnToggle.onclick = openModal;
+      btnSave.onclick = saveUbicacion;
+      btnCancel.onclick = closeModal;
+      const backdrop = modal.querySelector(".modal-backdrop");
+      if (backdrop) backdrop.onclick = closeModal;
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); saveUbicacion(); }
+        if (e.key === "Escape") { closeModal(); }
+      });
+    });
+  </script>
+
+  <script>
+    function updateCartBadge(n){
+      var el = document.getElementById('cart-badge');
+      if (el){ el.textContent = n; }
+    }
+  </script>
+
+  <form style="display:none">{% csrf_token %}</form>
+
+  <div class="modal" id="ubic-modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ubic-modal-title">
+      <h3 id="ubic-modal-title">Eleg&iacute; tu ubicaci&oacute;n</h3>
+      <p>Usamos esta referencia para mostrarte packs cercanos.</p>
+      <input id="ubic-input" type="text" name="ubicacion" placeholder="Ej: C&oacute;rdoba" autocomplete="off" />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="ubic-cancel">Cancelar</button>
+        <button type="button" class="btn" id="ubic-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <div class="f-title">ResQFood</div>
+        <p class="f-text">Conectamos comercios con personas para evitar desperdicio y ayudar al planeta tierra.</p>
+      </div>
+      <div>
+        <div class="f-title">Ayuda</div>
+        <div class="f-links">
+          <a href="/packs/">Ver packs</a>
+          <a href="{% url 'my_orders' %}">Mis pedidos</a>
+          <a href="{% url 'cart' %}">Mi carrito</a>
+        </div>
+      </div>
+      <div>
+        <div class="f-title">Cuenta</div>
+        <div class="f-links">
+          {% if user.is_authenticated %}
+            <a href="{% url 'mi_cuenta' %}">Mi cuenta</a>
+            <a href="{% url 'logout' %}">Cerrar sesión</a>
+          {% else %}
+            <a href="{% url 'login' %}">Ingresar</a>
+            <a href="{% url 'signup' %}">Registrarse</a>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="f-title">Legal</div>
+        <div class="f-links">
+          <a href="#">Términos y condiciones</a>
+          <a href="#">Política de privacidad</a>
+        </div>
+      </div>
+    </div>
+    <div class="container footer-copy">© {% now "Y" %} ResQFood</div>
+  </footer>
+</body>
+</html>
+
+
+
+
+
+

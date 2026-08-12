@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+venv
+ENV/
+env/
+.env
+
+# Django / SQLite
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+# keep stock assets in version control
+# static/ contains source assets referenced at runtime
+
+# VSCode / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+*.env
+
+# Coverage and test artifacts
+.coverage
+coverage.xml
+.coveragerc
+
+
+_backup_templates/
+templates_broken_*/
+.venv/
+db.sqlite3
+media/
+
+# Backups / temporales
+web_backup/
+backup_templates/
+templates_broken/
+templates/**/_utf8.tmp
+templates/**/*.bak.html
+templates/core/home_standalone.html
+templates/packs/list_utf8.tmp
+templates/base_utf8.tmp
+
+# Archivos temporales y accidentales
+*.tmp
+temp_listing.txt

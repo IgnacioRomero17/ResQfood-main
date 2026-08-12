@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Detalle del Pack{% endblock %}
+
+{% block content %}
+  <a href="{% url 'packs:list' %}">Volver</a>
+
+  <div id="detalle" style="margin-top:1rem;">
+    <p>Cargando...</p>
+  </div>
+
+  <div id="msg" style="margin-top:1rem; color:green; font-weight:bold;"></div>
+
+  <script>
+    // Si el usuario toca "atrás" desde este detalle, redirigimos al home para evitar layouts corruptos del listado en algunos navegadores
+    (function(){
+      try {
+        history.replaceState({ rf: 'pack-detail' }, '', location.href);
+        window.addEventListener('popstate', function(){ window.location.href = '/'; });
+      } catch(e){}
+    })();
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function money(x){
+      try { return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(x); }
+      catch { return `$${x}` }
+    }
+
+    async function cargarDetalle() {
+      try {
+        const res = await fetch(`/api/packs/{{ pk }}/`);
+        if (!res.ok) {
+          document.getElementById("detalle").innerHTML = `<p>Error ${res.status}</p>`;
+          return;
+        }
+        const p = await res.json();
+        const img = p.image_url || p.imagen_url || `https://picsum.photos/seed/${p.id}/600/300`;
+        const partner = p["partner-nombre"] || p.partner_nombre || "-";
+        const precio = p.precio_oferta ?? p.precio ?? 0;
+
+        document.getElementById("detalle").innerHTML = `
+          <img src="${img}" alt="${p.titulo}" style="max-width:420px;border-radius:12px;display:block;margin-bottom:12px">
+          <h1 style="margin:0 0 8px 0">${p.titulo}</h1>
+          <p><b>Comercio:</b> ${partner}</p>
+          <p><b>Descripcion:</b> ${p.descripcion || "Pack listo para retirar."}</p>
+          <p><b>Etiqueta:</b> ${p.etiqueta || "-"}</p>
+          <p><b>Descripcion:</b> ${p.descripcion || "Pack listo para retirar."}</p>
+          <p><b>Stock:</b> ${p.stock}</p>
+          <p><b>Precio:</b> ${money(precio)}</p>
+          <div id="acciones"></div>
+        `;
+
+        const acciones = document.getElementById("acciones");
+
+        {% if user.is_authenticated %}
+          if (p.stock > 0) {
+            acciones.innerHTML = `<button id="addBtn">Agregar al carrito</button>`;
+            document.getElementById("addBtn").onclick = async () => {
+              const r = await fetch(`/api/cart/add/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": getCookie("csrftoken") },
+                credentials: "same-origin",
+                body: (function(){ const fd=new FormData(); fd.append('pack_id', p.id); return fd; })()
+              });
+              const data = await r.json().catch(()=>({detail:"Error"}));
+              if (r.status === 401 || r.status === 403) {
+                window.location = `{% url 'login' %}?next=${encodeURIComponent(location.pathname)}`;
+                return;
+              }
+              if (r.ok) {
+                document.getElementById("msg").textContent = "Agregado al carrito";
+                if (window.updateCartBadge && typeof data.item_count !== 'undefined') updateCartBadge(data.item_count);
+              } else {
+                if (data.detail && confirm(data.detail + "\n\nVaciar carrito e intentar de nuevo?")) {
+                  const clr = await fetch('/api/cart/clear/', { method:'POST', headers:{'X-CSRFToken': getCookie('csrftoken')}, credentials:'same-origin' });
+                  if (clr.ok) { return document.getElementById('addBtn').click(); }
+                }
+              }
+            };
+          } else {
+            acciones.innerHTML = `<span>Sin stock</span>`;
+          }
+        {% else %}
+          acciones.innerHTML = `<a class="btn" href="{% url 'login' %}?next={{ request.path|urlencode }}">Ingresar para agregar al carrito</a>`;
+        {% endif %}
+      } catch (e) {
+        console.error(e);
+        document.getElementById("detalle").innerHTML = "<p>Error cargando el pack.</p>";
+      }
+    }
+
+    cargarDetalle();
+  </script>
+{% endblock %}

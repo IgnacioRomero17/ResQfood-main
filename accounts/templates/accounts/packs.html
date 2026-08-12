@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Packs</title></head>
+<body>
+  <h1>Packs disponibles</h1>
+  {% if messages %}{% for m in messages %}<p>{{ m }}</p>{% endfor %}{% endif %}
+  <form method="get">
+    <input name="q" placeholder="Buscar..." value="{{ request.GET.q }}">
+    <button type="submit">Buscar</button>
+  </form>
+  <ul>
+    {% for p in packs %}
+      <li>
+        <strong>{{ p.titulo }}</strong>
+        — ${{ p.precio_oferta }} ({{ p.partner_nombre }})
+        <form method="post" action="{% url 'order_create_view' p.id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit">Comprar</button>
+        </form>
+      </li>
+    {% empty %}
+      <li>No hay packs.</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{% url 'dashboard' %}">Volver</a></p>
+</body>
+</html>

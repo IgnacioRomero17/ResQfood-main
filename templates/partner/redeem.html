@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canjear Orden</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+    .box { max-width: 560px; border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+    .row { margin-bottom: 12px; }
+    input[type="text"] { width: 100%; padding: 8px; font-size: 16px; }
+    button { padding: 8px 12px; font-size: 15px; cursor: pointer; }
+    .ok { color: #0a7; }
+    .err { color: #c00; }
+    .muted { color: #666; }
+    .details { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Canjear Orden</h1>
+  <div class="box">
+    <div class="row">
+      <label for="code"><strong>Token firmado o ID de Orden</strong></label>
+      <input id="code" type="text" placeholder="Pega el token del QR o ingresa el ID" />
+    </div>
+    <div class="row">
+      <button id="btn-verify">Verificar</button>
+      <button id="btn-redeem" disabled>Canjear</button>
+    </div>
+    <div id="msg" class="row muted"></div>
+    <div id="details" class="details"></div>
+  </div>
+
+  <form id="csrf-form">{% csrf_token %}</form>
+
+  <script>
+    const msgEl = document.getElementById('msg');
+    const detailsEl = document.getElementById('details');
+    const codeEl = document.getElementById('code');
+    const btnVerify = document.getElementById('btn-verify');
+    const btnRedeem = document.getElementById('btn-redeem');
+
+    let currentOrderId = null;
+
+    function getCsrfToken() {
+      const input = document.querySelector('#csrf-form input[name=csrfmiddlewaretoken]');
+      return input ? input.value : '';
+    }
+
+    function resetUI() {
+      currentOrderId = null;
+      btnRedeem.disabled = true;
+      detailsEl.innerHTML = '';
+      msgEl.textContent = '';
+    }
+
+    async function verify() {
+      resetUI();
+      const code = codeEl.value.trim();
+      if (!code) {
+        msgEl.textContent = 'Ingresá un token o ID de orden.';
+        return;
+      }
+
+      // si es todo dígitos, lo tomamos como id
+      if (/^\d+$/.test(code)) {
+        currentOrderId = parseInt(code, 10);
+        msgEl.textContent = 'ID detectado. Podés canjear directamente.';
+        btnRedeem.disabled = false;
+        detailsEl.innerHTML = '';
+        return;
+      }
+
+      // caso token firmado → verificar contra API
+      try {
+        const res = await fetch('/api/orders/verify-qr/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+          },
+          body: JSON.stringify({ token: code }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          msgEl.className = 'row err';
+          msgEl.textContent = data.detail || 'Token inválido o error de verificación';
+          return;
+        }
+        currentOrderId = data.order_id;
+        btnRedeem.disabled = false;
+        msgEl.className = 'row ok';
+        msgEl.textContent = 'Verificación OK. Podés canjear.';
+        detailsEl.innerHTML = `
+          <div><strong>Estado:</strong> ${data.estado}</div>
+          <div><strong>Retiro:</strong> ${new Date(data.pickup_start).toLocaleString()} - ${new Date(data.pickup_end).toLocaleString()}</div>
+          <div><strong>Comercio:</strong> ${data.partner_nombre}</div>
+        `;
+      } catch (e) {
+        msgEl.className = 'row err';
+        msgEl.textContent = 'Error de red o servidor';
+      }
+    }
+
+    async function redeem() {
+      if (!currentOrderId) return;
+      try {
+        const res = await fetch(`/api/orders/${currentOrderId}/redeem/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+          }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          alert('✅ Éxito: ' + (data.detail || 'Orden canjeada'));
+          resetUI();
+        } else {
+          alert('❌ Error: ' + (data.detail || res.status));
+        }
+      } catch (e) {
+        alert('❌ Error de red');
+      }
+    }
+
+    btnVerify.addEventListener('click', verify);
+    btnRedeem.addEventListener('click', redeem);
+  </script>
+</body>
+</html>

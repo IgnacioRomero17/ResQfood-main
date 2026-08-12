@@ -1,0 +1,232 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<style>
+  .wrap{max-width:1100px;margin:16px auto;padding:0 16px;}
+  .grid{display:grid;gap:16px;grid-template-columns:1fr;}
+  @media(min-width:980px){.grid{grid-template-columns:1.1fr .9fr;}}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;}
+  .pad{padding:12px;}
+  .title{margin:0 0 6px;font-size:1.4rem;font-weight:800;color:#f59e0b;}
+  /* Relacionados: títulos discretos */
+  .rel-title{margin:0 0 4px;font-size:.98rem;font-weight:600;color:#1f2937;}
+  .rel-price{color:#6b7280;font-size:.95rem;}
+  .rel-price s{color:#9ca3af;font-weight:500;margin-left:6px;}
+  .muted{color:#6b7280;}
+  .price{font-weight:900;font-size:1.4rem;}
+  .price s{color:#9ca3af;font-weight:500;margin-left:6px;}
+  .badge{font-size:.85rem;border-radius:999px;padding:4px 8px;border:1px solid #e5e7eb;}
+  .b-ok{background:#ecfdf5;border-color:#86efac;}
+  .b-warn{background:#fffbeb;border-color:#fde68a;}
+  .b-err{background:#fef2f2;border-color:#fecaca;}
+  .logo-wrap{display:flex;justify-content:center;align-items:center;padding:16px;}
+  .logo-big{width:160px;height:160px;border-radius:16px;border:1px solid #e5e7eb;background:#f3f4f6;object-fit:cover}
+  .img-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px}
+  .sq{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:10px;border:1px solid #e5e7eb;background:#f3f4f6}
+  .cta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+  .pbtn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+  .pbtn.secondary{background:#fff;color:var(--brand);border:1px solid var(--brand);}
+  .rel-grid{display:grid;gap:12px;grid-template-columns:repeat(2,1fr);} 
+  @media(min-width:900px){.rel-grid{grid-template-columns:repeat(4,1fr);}}
+  .thumb{aspect-ratio:4/3;object-fit:cover;width:100%;display:block;background:#f3f4f6}
+  .cart-msg{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid #fde68a;background:#fffbeb;color:#92400e;display:none;}
+  .cart-msg.ok{border-color:#86efac;background:#ecfdf5;color:#065f46;}
+  .cart-msg.err{border-color:#fecaca;background:#fef2f2;color:#991b1b;}
+  .cart-msg-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+  .cart-msg-actions button{border:1px solid #e5e7eb;background:#fff;padding:6px 10px;border-radius:10px;cursor:pointer;font-weight:600;}
+</style>
+
+<div class="wrap" itemscope itemtype="https://schema.org/Product">
+  <meta itemprop="name" content="{{ pack.titulo }}">
+  <meta itemprop="brand" content="{{ pack.partner.nombre }}">
+  <div itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+    <meta itemprop="priceCurrency" content="ARS">
+    <meta itemprop="price" content="{{ price_show }}">
+    <meta itemprop="availability" content="{% if pack.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}">
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="logo-wrap">
+        <img class="logo-big" src="{{ pack.partner.image_or_stock_url }}" alt="{{ pack.partner.nombre }}" loading="eager" decoding="async" data-placeholder="{% static 'img/placeholder-pack.svg' %}" onerror="this.onerror=null; this.src=this.getAttribute('data-placeholder');">
+      </div>
+      <div class="img-grid">
+        {% for g in gallery %}
+          <img class="sq" src="{{ g }}" alt="{{ pack.titulo }}" loading="lazy" decoding="async">
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card pad">
+      <h1 class="title" itemprop="name">{{ pack.titulo }}</h1>
+      <div class="muted">{{ pack.partner.nombre }}</div>
+      <div style="margin-top:6px;">
+        {% if pack.precio_oferta and pack.precio_oferta < pack.precio_original %}
+          <span class="price">${{ pack.precio_oferta }}</span><s>${{ pack.precio_original }}</s>
+          <span class="badge b-ok">Oferta</span>
+        {% else %}
+          <span class="price">${{ pack.precio_original }}</span>
+        {% endif %}
+        {% if pack.stock <= 0 %}
+          <span class="badge b-err">Sin stock</span>
+        {% elif pack.stock < 5 %}
+          <span class="badge b-warn">&#161;Quedan {{ pack.stock }}!</span>
+        {% else %}
+          <span class="badge">Stock: {{ pack.stock }}</span>
+        {% endif %}
+      </div>
+      {% if pack_desc %}
+      <p class="muted" style="margin:8px 0 10px;">{{ pack_desc }}</p>
+      {% endif %}
+
+      <div style="margin-top:10px;">
+        <div class="muted">Retiro: {{ pack.pickup_start|date:"d/m H:i" }} - {{ pack.pickup_end|date:"H:i" }}</div>
+        <div id="countdown" class="muted"></div>
+      </div>
+
+      <div class="cta">
+        {% if pending_order %}
+          <a class="pbtn" href="/orders/{{ pending_order.id }}/?from=pack">Continuar pago</a>
+          {% if last_payment and last_payment.status == "pending" %}
+            <span class="muted">Pago pendiente.</span>
+          {% endif %}
+        {% else %}
+          <button id="addBtn" type="button" class="pbtn" onclick="return addToCartPack(event)" {% if pack.stock <= 0 %}disabled title="Sin stock"{% endif %}>Agregar al carrito</button>
+        {% endif %}
+        <a class="pbtn secondary" href="/c/{{ pack.partner.slug|default:pack.partner.id }}/">Ver comercio</a>
+      </div>
+      <div id="cart-msg" class="cart-msg" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <h2 style="color:#f59e0b;">Tambi&eacute;n te puede interesar</h2>
+    <div class="rel-grid">
+      {% for r in related %}
+        <a class="card link" href="/packs/{{ r.id }}/">
+          <img class="thumb" src="{{ r.image_or_stock_url }}" alt="{{ r.titulo|default:'Pack' }}" loading="lazy" decoding="async" data-placeholder="{% static 'img/placeholder-pack.svg' %}" onerror="this.onerror=null; this.src=this.getAttribute('data-placeholder');">
+          <div class="pad">
+            <p class="rel-title">{{ r.titulo }}</p>
+            <div class="rel-price">
+              ${{ r.precio_oferta|default:r.precio_original }}
+              {% if r.precio_oferta and r.precio_oferta < r.precio_original %}<s>${{ r.precio_original }}</s>{% endif %}
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="muted">Sin m&aacute;s packs de este comercio por ahora.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  // Countdown
+  (function(){
+    const el = document.getElementById('countdown');
+    if(!el) return;
+    const end = new Date("{{ pack.pickup_end|date:'Y-m-d H:i:s' }}".replace(' ','T'));
+    function tick(){
+      const now = new Date();
+      const diff = end - now;
+      if(diff <= 0){ el.textContent = 'Ventana de retiro finalizada'; return; }
+      const h = Math.floor(diff/3.6e6);
+      const m = Math.floor((diff%3.6e6)/6e4);
+      el.textContent = 'Termina en ' + h + 'h ' + m + 'm';
+      setTimeout(tick, 60000);
+    }
+    tick();
+  })();
+
+  // Helpers
+  function getCookie(name){
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m.pop() : '';
+  }
+
+  // Inline feedback
+  function showCartMessage(text, type, actions){
+    const box = document.getElementById('cart-msg');
+    if(!box) return;
+    box.style.display = 'block';
+    box.className = 'cart-msg' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+    box.innerHTML = '';
+    const span = document.createElement('div');
+    span.textContent = text;
+    box.appendChild(span);
+    if(actions && actions.length){
+      const actionsWrap = document.createElement('div');
+      actionsWrap.className = 'cart-msg-actions';
+      actions.forEach(function(action){
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = action.label;
+        btn.onclick = action.onClick;
+        actionsWrap.appendChild(btn);
+      });
+      box.appendChild(actionsWrap);
+    }
+  }
+
+  // Expose global for inline onclick
+  window.addToCartPack = async function(ev){
+    if(ev) ev.preventDefault();
+    const btn = document.getElementById('addBtn');
+    if(!btn || btn.disabled) return false;
+    const old = btn.textContent; btn.disabled = true; btn.textContent = 'Agregando...';
+    try{
+      const res = await fetch('/api/cart/add/', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        credentials:'same-origin',
+        body: JSON.stringify({ pack_id: {{ pack.id }} })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(res.status === 401 || res.status === 403){
+        window.location = '{% url "login" %}?next={{ request.path|urlencode }}';
+        return false;
+      }
+      if(!res.ok){
+        const msg = (data && data.detail) ? data.detail : 'No se pudo agregar.';
+        if(/mismo comercio/i.test(msg)){
+          showCartMessage(msg, 'warn', [{
+            label: 'Vaciar carrito e intentar de nuevo',
+            onClick: async function(){
+              await fetch('/api/cart/clear/', { method:'POST', headers:{ 'X-CSRFToken': getCookie('csrftoken') }, credentials:'same-origin' });
+              btn.disabled = false;
+              btn.click();
+            }
+          }]);
+        } else {
+          showCartMessage(msg, 'err');
+        }
+        btn.textContent = old; btn.disabled = false; return false;
+      }
+      if(window.updateCartBadge && typeof data.item_count !== 'undefined') updateCartBadge(data.item_count);
+      showCartMessage('Agregado al carrito', 'ok');
+      btn.textContent = 'Agregado!'; setTimeout(()=>location.href='/cart/', 400);
+      return false;
+    }catch(e){ btn.textContent = old; btn.disabled = false; showCartMessage('Error de red', 'err'); return false; }
+  };
+
+  // Image fallbacks
+  (function(){
+    const pool = [
+      '{% static "img/stock/verduleria/1.jpg" %}',
+      '{% static "img/stock/verduleria/2.jpeg" %}',
+      '{% static "img/stock/cafes/1.jpg" %}',
+      '{% static "img/stock/carniceria/2.jpeg" %}',
+      '{% static "img/stock/helados/2.jpeg" %}',
+      '{% static "img/stock/supermercados/3.jpg" %}'
+    ];
+    function pick(){ return pool[Math.floor(Math.random()*pool.length)]; }
+    document.querySelectorAll('.img-grid img, .rel-grid img').forEach(function(img){
+      img.addEventListener('error', function(){ img.src = pick(); }, { once:true });
+      try{ if((img.currentSrc||img.src||'').includes('placeholder-pack.svg')) img.src = pick(); }catch(e){}
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mis pedidos{% endblock %}
+
+{% block content %}
+<style>
+  .wrap { max-width:1100px; margin: 16px auto; padding: 0 16px; }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .pill { border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; background:#fff; font-size:.92rem; text-decoration:none; color:#111827; }
+  :root{ --accent:#f97316; }
+  .pill.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .select { border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; font-size:.92rem; }
+
+  .list { display:grid; gap:10px; }
+  .row { display:grid; grid-template-columns: 96px 1fr auto; gap:14px; padding:12px; align-items:center; }
+  .row.card{ min-width:0; width:100%; }
+  .thumb { width:96px; height:96px; object-fit:contain; border-radius:10px; background:#fff; border:1px solid #e5e7eb; }
+  @media (max-width:480px){ .row{ grid-template-columns:80px 1fr auto; gap:10px } .thumb{ width:80px; height:80px } }
+
+  .title { display:flex; align-items:center; gap:8px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .title .oid{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #e5e7eb; color:var(--brand); text-decoration:none; font-weight:800; background:#fff; }
+  .title .pname{ font-weight:800; color:#111827; }
+  .sub { color:#6b7280; font-size:.9rem; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .sub .price{ font-weight:700; color:#111827; }
+  .dot::before{ content:'·'; margin:0 4px; color:#9ca3af }
+
+  .badge { font-size:.85rem; border-radius:999px; padding:4px 8px; border:1px solid #e5e7eb; }
+  .b-pend { background:#eff6ff; border-color:#93c5fd; }
+  .b-paid { background:#ecfdf5; border-color:#86efac; }
+  .b-ret  { background:#f3f4f6; }
+  .b-canc { background:#fef2f2; border-color:#fca5a5; }
+
+  .cta { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .wrap .btn { border:1px solid var(--accent); background:var(--accent); color:#fff; padding:6px 10px; border-radius:8px; font-weight:600; text-decoration:none; display:inline-block; }
+  .wrap .btn.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); }
+
+  .muted { color:#6b7280; }
+  .pagination { display:flex; gap:6px; justify-content:center; margin-top:12px; }
+  .page-link { border:1px solid #e5e7eb; padding:6px 10px; border-radius:8px; text-decoration:none; color:#111827; }
+  .page-link.active { background:#111827; color:#fff; border-color:#111827; }
+</style>
+
+<div class="wrap">
+  <h1 style="margin:0 0 8px;">Mis pedidos</h1>
+
+  <div class="bar">
+    <a class="pill {% if not filter_estado %}active{% endif %}" href="{% url 'my_orders' %}?{% if filter_metodo %}metodo={{filter_metodo}}&{% endif %}{% if orden %}orden={{orden}}&{% endif %}">Todos</a>
+    <a class="pill {% if filter_estado == 'pendiente' %}active{% endif %}" href="{% url 'my_orders' %}?estado=pendiente{% if filter_metodo %}&metodo={{filter_metodo}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Pendientes</a>
+    <a class="pill {% if filter_estado == 'pagado' %}active{% endif %}" href="{% url 'my_orders' %}?estado=pagado{% if filter_metodo %}&metodo={{filter_metodo}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Pagados</a>
+    <a class="pill {% if filter_estado == 'retirado' %}active{% endif %}" href="{% url 'my_orders' %}?estado=retirado{% if filter_metodo %}&metodo={{filter_metodo}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Retirados</a>
+    <a class="pill {% if filter_estado == 'cancelado' %}active{% endif %}" href="{% url 'my_orders' %}?estado=cancelado{% if filter_metodo %}&metodo={{filter_metodo}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Cancelados</a>
+
+    <span class="muted" style="margin-left:8px;">Método:</span>
+    <a class="pill {% if not filter_metodo %}active{% endif %}" href="{% url 'my_orders' %}?{% if filter_estado %}estado={{filter_estado}}&{% endif %}{% if orden %}orden={{orden}}{% endif %}">Todos</a>
+    <a class="pill {% if filter_metodo == 'mp' %}active{% endif %}" href="{% url 'my_orders' %}?metodo=mp{% if filter_estado %}&estado={{filter_estado}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Mercado Pago</a>
+    <a class="pill {% if filter_metodo == 'efectivo' %}active{% endif %}" href="{% url 'my_orders' %}?metodo=efectivo{% if filter_estado %}&estado={{filter_estado}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Efectivo</a>
+    <a class="pill {% if filter_metodo == 'transferencia' %}active{% endif %}" href="{% url 'my_orders' %}?metodo=transferencia{% if filter_estado %}&estado={{filter_estado}}{% endif %}{% if orden %}&orden={{orden}}{% endif %}">Transferencia</a>
+
+    <span class="muted" style="margin-left:auto;">Orden:</span>
+    <select id="ordenSel" class="select">
+      <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>Más recientes</option>
+      <option value="monto-desc" {% if orden == 'monto-desc' %}selected{% endif %}>Monto ↓</option>
+      <option value="monto-asc"  {% if orden == 'monto-asc' %}selected{% endif %}>Monto ↑</option>
+    </select>
+  </div>
+
+  <div class="list">
+    {% for o in page.object_list %}
+      <div class="row card">
+        <a href="/packs/{{ o.pack.id }}/">
+          <img class="thumb" style="aspect-ratio:1/1;" src="{{ o.pack.image_or_stock_url }}" alt="{{ o.pack.titulo|default:'Pack' }}" loading="lazy" decoding="async" data-placeholder="{% static 'img/placeholder-pack.svg' %}">
+        </a>
+
+        <div>
+          <p class="title">
+            <a class="oid" href="{% url 'order_detail' o.id %}">#{{ o.id }}</a>
+            <span class="pname">{{ o.pack.titulo|default:"Pack" }}</span>
+          </p>
+          <div class="sub">
+            <span class="partner">{{ o.pack.partner.nombre|default:"" }}</span>
+            <span class="dot"></span>
+            <span class="price">${{ o.precio_pagado|default:o.pack.precio_oferta|default:o.pack.precio_original }}</span>
+            <span class="dot"></span>
+            <span class="date">{{ o.creado_at|date:"d/m/Y H:i" }}</span>
+            {% if o.metodo_pago %}<span class="dot"></span><span class="method">{{ o.metodo_pago|title }}</span>{% endif %}
+            {% if o.last_payment %}<span class="dot"></span><span class="pay">Pago: {{ o.last_payment.status }}</span>{% endif %}
+          </div>
+        </div>
+
+        <div class="cta">
+          {% if o.estado == "pendiente" %}
+            <span class="badge b-pend">Pendiente</span>
+            {% if o.metodo_pago == "mp" %}
+              <a class="btn" href="{% url 'order_detail' o.id %}?from=mis-reservas">Continuar pago</a>
+            {% elif o.metodo_pago == "transferencia" %}
+              <a class="btn" href="{% url 'order_detail' o.id %}?from=mis-reservas#transfer">Ver datos de transferencia</a>
+            {% elif o.metodo_pago == "efectivo" %}
+              <a class="btn" href="{% url 'order_detail' o.id %}?from=mis-reservas#efectivo">Ver instrucciones</a>
+            {% endif %}
+          {% elif o.estado == "pagado" %}
+            <span class="badge b-paid">Pagado</span>
+            <a class="btn secondary" href="{% url 'order_detail' o.id %}">Ver QR</a>
+          {% elif o.estado == "retirado" %}
+            <span class="badge b-ret">Retirado</span>
+            <a class="btn secondary" href="{% url 'order_detail' o.id %}">Detalle</a>
+          {% elif o.estado == "cancelado" %}
+            <span class="badge b-canc">Cancelado</span>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="muted">No se encontraron pedidos con los filtros seleccionados.</div>
+    {% endfor %}
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+    <div class="pagination">
+      {% if page.has_previous %}
+        <a class="page-link" href="?page={{ page.previous_page_number }}&estado={{ filter_estado }}&metodo={{ filter_metodo }}&orden={{ orden }}">«</a>
+      {% endif %}
+      {% for i in page.paginator.page_range %}
+        <a class="page-link {% if i == page.number %}active{% endif %}" href="?page={{ i }}&estado={{ filter_estado }}&metodo={{ filter_metodo }}&orden={{ orden }}">{{ i }}</a>
+      {% endfor %}
+      {% if page.has_next %}
+        <a class="page-link" href="?page={{ page.next_page_number }}&estado={{ filter_estado }}&metodo={{ filter_metodo }}&orden={{ orden }}">»</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<script>
+(function(){
+  const sel = document.getElementById('ordenSel');
+  if (!sel) return;
+  sel.addEventListener('change', () => {
+    const sp = new URLSearchParams(window.location.search);
+    sp.set('orden', sel.value);
+    sp.delete('page');
+    window.location.search = sp.toString();
+  });
+})();
+</script>
+{% endblock %}

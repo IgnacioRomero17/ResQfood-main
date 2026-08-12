@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Canjear orden</title></head>
+<body>
+  <h1>Canjear orden</h1>
+  {% if messages %}{% for m in messages %}<p>{{ m }}</p>{% endfor %}{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <label>ID de orden</label>
+    <input name="order_id" required>
+    <button type="submit">Marcar como RETIRADA</button>
+  </form>
+  <p><a href="{% url 'dashboard' %}">Volver</a></p>
+</body>
+</html>

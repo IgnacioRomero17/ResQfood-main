@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Buscar{% if q %} · "{{ q }}"{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+  .wrap{ max-width:1100px; margin:16px auto; padding:0 16px;}
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0;}
+  .pill{ border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; background:#fff; font-size:.92rem; text-decoration:none; color:#111827;}
+  .pill.active{ background:#111827; color:#fff; border-color:#111827;}
+  .select{ border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px; font-size:.92rem;}
+  .grid{ display:grid; gap:12px; grid-template-columns: repeat(2,1fr); }
+  @media (min-width:768px){ .grid{ grid-template-columns: repeat(3,1fr);} }
+  @media (min-width:1100px){ .grid{ grid-template-columns: repeat(4,1fr);} }
+  .card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; text-decoration:none; color:inherit;}
+  .thumb{ aspect-ratio:4/3; object-fit:cover; width:100%; display:block; background:#f3f4f6;}
+  .card-body{ padding:10px 12px;}
+  .title{ font-weight:700; margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .meta{ color:#6b7280; font-size:.92rem; display:flex; justify-content:space-between; gap:8px;}
+  .section-head{ display:flex; align-items:center; justify-content:space-between; margin:12px 0 8px;}
+  .pagination{ display:flex; gap:6px; justify-content:center; margin-top:12px;}
+  .page-link{ border:1px solid #e5e7eb; padding:6px 10px; border-radius:8px; text-decoration:none; color:#111827;}
+  .page-link.active{ background:#111827; color:#fff; border-color:#111827;}
+</style>
+
+<div class="wrap">
+  <h1 style="margin:0 0 6px; color:#f59e0b;">Resultados de búsqueda</h1>
+  <p class="muted" style="color:#6b7280;">Término: <strong>"{{ q|default:'(vacío)' }}"</strong></p>
+
+  <div class="filters">
+    <span class="muted" style="color:#6b7280;">Ver:</span>
+    <a class="pill {% if tipo == 'todos' %}active{% endif %}" href="{% url 'search' %}?q={{ q|urlencode }}&stock={{ stock|yesno:'1,0' }}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}">Todos</a>
+    <a class="pill {% if tipo == 'packs' %}active{% endif %}" href="{% url 'search' %}?q={{ q|urlencode }}&tipo=packs&stock={{ stock|yesno:'1,0' }}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}">Packs</a>
+    <a class="pill {% if tipo == 'partners' %}active{% endif %}" href="{% url 'search' %}?q={{ q|urlencode }}&tipo=partners">Comercios</a>
+
+    <a class="pill {% if stock %}active{% endif %}" href="{% url 'search' %}?q={{ q|urlencode }}&tipo={{ tipo }}&stock={% if stock %}0{% else %}1{% endif %}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}">Con stock</a>
+    <a class="pill {% if oferta %}active{% endif %}" href="{% url 'search' %}?q={{ q|urlencode }}&tipo={{ tipo }}&stock={{ stock|yesno:'1,0' }}&oferta={% if oferta %}0{% else %}1{% endif %}&orden={{ orden }}">Ofertas</a>
+
+    <span class="muted" style="margin-left:auto;color:#6b7280;">Orden:</span>
+    <select id="ordenSel" class="select">
+      <option value="relevancia" {% if orden == 'relevancia' %}selected{% endif %}>Relevancia</option>
+      <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>Más nuevo</option>
+      <option value="precio-asc" {% if orden == 'precio-asc' %}selected{% endif %}>Precio ↑</option>
+      <option value="precio-desc" {% if orden == 'precio-desc' %}selected{% endif %}>Precio ↓</option>
+    </select>
+  </div>
+
+  {% if tipo in "todos packs" %}
+    <div class="section-head"><h2>Packs</h2></div>
+    <div class="grid">
+      {% for p in page_packs.object_list %}
+        <a class="card link" href="/packs/{{ p.id }}/">
+          <img class="thumb" src="{{ p.image_or_stock_url }}" alt="{{ p.titulo|default:'Pack' }}" loading="lazy" decoding="async">
+          <div class="card-body">
+            <p class="title">{{ p.titulo|default:"Pack" }}</p>
+            <div class="meta">
+              <span class="price">
+                ${{ p.precio_oferta|default:p.precio_original }}
+                {% if p.precio_oferta and p.precio_oferta < p.precio_original %}
+                  <s>${{ p.precio_original }}</s>
+                {% endif %}
+              </span>
+              <span>{{ p.partner.nombre }}</span>
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="muted" style="grid-column:1/-1;color:#6b7280;">No se encontraron packs.</div>
+      {% endfor %}
+    </div>
+
+    {% if page_packs.paginator.num_pages > 1 %}
+      <div class="pagination">
+        {% if page_packs.has_previous %}
+          <a class="page-link" href="?q={{ q|urlencode }}&tipo={{ tipo }}&stock={{ stock|yesno:'1,0' }}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}&p_packs={{ page_packs.previous_page_number }}&p_partners={{ page_partners.number|default:1 }}">«</a>
+        {% endif %}
+        {% for i in page_packs.paginator.page_range %}
+          <a class="page-link {% if i == page_packs.number %}active{% endif %}"
+            href="?q={{ q|urlencode }}&tipo={{ tipo }}&stock={{ stock|yesno:'1,0' }}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}&p_packs={{ i }}&p_partners={{ page_partners.number|default:1 }}">{{ i }}</a>
+        {% endfor %}
+        {% if page_packs.has_next %}
+          <a class="page-link" href="?q={{ q|urlencode }}&tipo={{ tipo }}&stock={{ stock|yesno:'1,0' }}&oferta={{ oferta|yesno:'1,0' }}&orden={{ orden }}&p_packs={{ page_packs.next_page_number }}&p_partners={{ page_partners.number|default:1 }}">»</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {% if tipo in "todos partners" %}
+    <div class="section-head" style="margin-top:16px;"><h2>Comercios</h2></div>
+    <div class="grid">
+      {% for m in page_partners.object_list %}
+        <a class="card link" href="/c/{{ m.slug|default:m.id }}/">
+          <img class="thumb" style="aspect-ratio:1/1;" src="{{ m.image_or_stock_url }}" alt="{{ m.nombre }}" loading="lazy" decoding="async">
+          <div class="card-body">
+            <p class="title">{{ m.nombre }}</p>
+            <div class="meta"><span>{{ m.direccion|default:"" }}</span><span>Ver packs →</span></div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="muted" style="grid-column:1/-1;color:#6b7280;">No se encontraron comercios.</div>
+      {% endfor %}
+    </div>
+
+    {% if page_partners.paginator.num_pages > 1 %}
+      <div class="pagination">
+        {% if page_partners.has_previous %}
+          <a class="page-link" href="?q={{ q|urlencode }}&tipo={{ tipo }}&p_partners={{ page_partners.previous_page_number }}&p_packs={{ page_packs.number|default:1 }}">«</a>
+        {% endif %}
+        {% for i in page_partners.paginator.page_range %}
+          <a class="page-link {% if i == page_partners.number %}active{% endif %}"
+            href="?q={{ q|urlencode }}&tipo={{ tipo }}&p_partners={{ i }}&p_packs={{ page_packs.number|default:1 }}">{{ i }}</a>
+        {% endfor %}
+        {% if page_partners.has_next %}
+          <a class="page-link" href="?q={{ q|urlencode }}&tipo={{ tipo }}&p_partners={{ page_partners.next_page_number }}&p_packs={{ page_packs.number|default:1 }}">»</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<script>
+(function(){
+  const sel = document.getElementById('ordenSel');
+  if (sel){
+    sel.addEventListener('change', () => {
+      const sp = new URLSearchParams(window.location.search);
+      sp.set('orden', sel.value);
+      sp.delete('p_packs'); sp.delete('p_partners');
+      window.location.search = sp.toString();
+    });
+  }
+})();
+</script>
+{% endblock %}

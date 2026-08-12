@@ -1,0 +1,278 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Mis reservas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+    <style>
+        .grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .badge {
+            font-size: .75rem;
+            padding: .25rem .5rem;
+            border-radius: .5rem;
+            display: inline-block;
+            margin-top: .25rem;
+        }
+
+        .b-pend {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* pendiente */
+        .b-paga {
+            background: #DBEAFE;
+            color: #1E3A8A;
+        }
+
+        /* pagado   */
+        .b-ret {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        /* retirado */
+        .b-canc {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        /* cancelado*/
+        .b-exp {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* expirado */
+        .btn {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: .5rem .75rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #F9FAFB;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: .9rem;
+        }
+
+        img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container" style="max-width:1100px;margin:1.25rem auto;padding:0 1rem;">
+        <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:1rem;">
+            <button class="btn" type="button" onclick="goBack()">← Volver</button>
+            <h1 style="font-size:1.5rem; font-weight:700; margin:0;">Mis reservas</h1>
+        </div>
+
+        <div role="tablist" aria-label="Estados de reservas" style="display:flex; gap:.5rem; margin-bottom:1rem;">
+            <button role="tab" class="btn tab active" data-filter="pendiente" aria-selected="true">Pendientes</button>
+            <button role="tab" class="btn tab" data-filter="pagado" aria-selected="false">Pagadas</button>
+            <button role="tab" class="btn tab" data-filter="retirado" aria-selected="false">Retiradas</button>
+            <button role="tab" class="btn tab" data-filter="expirado" aria-selected="false">Vencidas</button>
+            <button role="tab" class="btn tab" data-filter="cancelado" aria-selected="false">Canceladas</button>
+            <button role="tab" class="btn tab" data-filter="__all__" aria-selected="false">Todos</button>
+        </div>
+
+        {% if orders %}
+        <ul class="grid">
+            {% for o in orders %}
+            <li class="card" id="order-{{ o.id }}" data-estado="{{ o.estado }}" data-pickup-end="{{ o.pack.pickup_end|date:'c' }}">
+                {% if o.pack.imagen %}
+                <img src="{{ o.pack.image_or_stock_url }}" alt="{{ o.pack.titulo }}">
+                {% endif %}
+
+                <div style="flex:1; margin-top:.5rem;">
+                    <div style="font-weight:600;">{{ o.pack.titulo }}</div>
+                    <div class="muted">{{ o.pack.partner.nombre }}</div>
+
+                    <div class="muted">
+                        <span style="font-weight:600;">Retiro:</span>
+                        {{ o.pack.pickup_start|date:"d/m/Y H:i" }} — {{ o.pack.pickup_end|date:"d/m/Y H:i" }}
+                    </div>
+
+                    <div class="muted">
+                        <span style="font-weight:600;">Precio:</span> ${{ o.precio_pagado }}
+                    </div>
+                    <div class="muted countdown" aria-live="polite"></div>
+
+                    {% comment %} Badge de estado {% endcomment %}
+                    {% with es=o.estado %}
+                    <span class="badge
+                  {% if es == 'pendiente' %}b-pend
+                  {% elif es == 'pagado' %}b-paga
+                  {% elif es == 'retirado' %}b-ret
+                  {% elif es == 'cancelado' %}b-canc
+                  {% elif es == 'expirado' %}b-exp
+                  {% endif %}
+                ">
+                        {{ es|upper }}
+                    </span>
+                    {% endwith %}
+                </div>
+
+                {% comment %} Botón Cancelar si aplica {% endcomment %}
+                {% if o.estado == 'pendiente' or o.estado == 'pagado' %}
+                {% if o.pack.pickup_end > now %}
+                <button class="btn" onclick="cancelOrder({{ o.id }})">Cancelar</button>
+                {% endif %}
+                {% endif %}
+
+                <a class="btn" href="{% url 'order_detail' o.id %}" style="margin-top:.5rem;">
+                    Ver detalle
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% if is_paginated %}
+        <nav style="margin-top:1rem;">
+            {% if page_obj.has_previous %}
+            <a class="btn" href="?page={{ page_obj.previous_page_number }}">« Anterior</a>
+            {% endif %}
+            <span class="muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a class="btn" href="?page={{ page_obj.next_page_number }}">Siguiente »</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        {% else %}
+        <p>Aún no tenés reservas.</p>
+        {% endif %}
+    </main>
+
+    <script>
+        function goBack(){
+            try{
+                if (window.history.length > 1) { window.history.back(); }
+                else if (document.referrer) { window.location.href = document.referrer; }
+                else { window.location.href = '/'; }
+            }catch(e){ window.location.href = '/'; }
+        }
+        // CSRF: tomado de la doc de Django
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        async function cancelOrder(id) {
+            if (!confirm('¿Cancelar esta reserva?')) return;
+
+            const res = await fetch(`/api/orders/${id}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'   // 👈 importante para mandar cookies
+            });
+
+            // Leer respuesta de forma robusta (JSON o HTML)
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch { data = { detail: text }; }
+
+            if (!res.ok) {
+                alert(data.detail || `Error ${res.status}`);
+                return;
+            }
+
+            // Actualizar UI a CANCELADO
+            const li = document.getElementById(`order-${id}`);
+            if (li) {
+                const badge = li.querySelector('.badge');
+                if (badge) { badge.textContent = 'CANCELADO'; badge.className = 'badge b-canc'; }
+                const btn = li.querySelector('button'); if (btn) btn.remove();
+            }
+            alert('Orden cancelada ✅');
+        }
+
+
+        // Tabs y filtrado
+        const tabs = document.querySelectorAll('[role="tab"]');
+        const cards = () => Array.from(document.querySelectorAll('li.card'));
+
+        function setActiveTab(clicked) {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabs.forEach(t => t.setAttribute('aria-selected', String(t === clicked)));
+            clicked.classList.add('active');
+        }
+
+        function applyFilter(filter) {
+            cards().forEach(c => {
+                const estado = c.getAttribute('data-estado');
+                const show = (filter === '__all__') || (estado === filter);
+                c.style.display = show ? '' : 'none';
+            });
+            updateCountdown();
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setActiveTab(tab);
+                applyFilter(tab.getAttribute('data-filter'));
+            });
+        });
+
+        // Countdown cada 60s sobre tarjetas visibles
+        function fmtCountdown(diffMs) {
+            if (diffMs <= 0) return 'Vencido';
+            const totalMin = Math.floor(diffMs / 60000);
+            const h = Math.floor(totalMin / 60);
+            const m = totalMin % 60;
+            if (h <= 0) return `${m}m left`;
+            return `${h}h ${m}m left`;
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            cards().forEach(c => {
+                if (c.style.display === 'none') return; // sólo visibles
+                const iso = c.getAttribute('data-pickup-end');
+                if (!iso) return;
+                const end = new Date(iso);
+                const label = c.querySelector('.countdown');
+                if (!label) return;
+                const diff = end - now;
+                label.textContent = fmtCountdown(diff);
+            });
+        }
+        // Inicializar en carga y cada 60s
+        updateCountdown();
+        setInterval(updateCountdown, 60000);
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Acceso no autorizado (403){% endblock %}
+{% block content %}
+<div class="wrap">
+  {% include "partials/empty.html" with title="No tenés permisos" subtitle="Iniciá sesión con una cuenta válida para continuar." cta_href="/accounts/login/" cta_label="Iniciar sesión" %}
+</div>
+{% endblock %}

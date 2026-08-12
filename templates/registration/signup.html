@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta{% endblock %}
+{% block content %}
+<style>
+  .wrap{ max-width:600px; margin:16px auto; padding:0 16px; }
+  .card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; }
+  .title{ margin:0 0 8px; font-weight:800; font-size:1.4rem; color:#f59e0b; }
+  .field{ margin:10px 0; }
+  .label{ display:block; font-weight:600; margin-bottom:6px; color:#374151; }
+  .input{ width:100%; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; font-size:1rem; }
+  .card{ overflow:visible; }
+  .actions{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .btn{ border:1px solid var(--brand); border-radius:10px; padding:10px 12px; background:var(--brand); color:#fff; cursor:pointer; font-weight:700; text-decoration:none; display:inline-block }
+  .link{ color:#2563eb; text-decoration:none; }
+  .form-errors{ color:#b91c1c; margin:6px 0; }
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <h1 class="title">Crear cuenta</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+
+      <div class="field">
+        <label class="label" for="id_username">Usuario</label>
+        <input class="input" type="text" name="username" id="id_username" required value="{{ form.username.value|default_if_none:'' }}">
+        {{ form.username.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="id_email">Email</label>
+        <input class="input" type="email" name="email" id="id_email" value="{{ form.email.value|default_if_none:'' }}">
+        {{ form.email.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="id_password1">Contraseña</label>
+        <input class="input" type="password" name="password1" id="id_password1" required>
+        {{ form.password1.errors }}
+      </div>
+
+      <div class="field">
+        <label class="label" for="id_password2">Repetir contraseña</label>
+        <input class="input" type="password" name="password2" id="id_password2" required>
+        {{ form.password2.errors }}
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn">Registrarme</button>
+      </div>
+    </form>
+
+    <p style="margin-top:10px;"><a class="link" href="{% url 'login' %}">¿Ya tenés cuenta?</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Dashboard</title></head>
+  <body>
+    <h1>Hola, {{ user.username }}</h1>
+    <p>Token disponible en sesión: {{ has_token }}</p>
+    <p><a href="{% url 'logout' %}">Cerrar sesión</a></p>
+  </body>
+</html>

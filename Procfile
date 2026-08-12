@@ -1,0 +1,1 @@
+web: gunicorn resqfood.wsgi --preload --workers 2 --timeout 120
