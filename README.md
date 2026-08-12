@@ -1,4 +1,4 @@
-ResQFood 
+### ResQFood 
 
 ResQFood es una plataforma web para reducir el desperdicio de alimentos, conectando comercios con consumidores para ofrecer productos y packs con descuento antes de que sean descartados.
 
