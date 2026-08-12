@@ -2,7 +2,8 @@ ResQFood
 
 ResQFood es una plataforma web para reducir el desperdicio de alimentos, conectando comercios con consumidores para ofrecer productos y packs con descuento antes de que sean descartados.
 
-🚀 Funcionalidades
+🚀 ### Funcionalidades
+```
 Registro y autenticación de usuarios.
 Marketplace de comercios y packs.
 Búsqueda, filtros y ordenamiento.
@@ -12,14 +13,16 @@ Gestión de stock.
 Integración con Mercado Pago y webhooks.
 API REST.
 Tests automatizados.
-🛠️ Tecnologías
-Backend: Python, Django, Django REST Framework.
-Frontend: HTML, CSS, JavaScript, Django Templates.
-Base de datos: SQLite.
-Pagos: Mercado Pago.
-Deployment: Docker / Render.
-Control de versiones: Git / GitHub.
-📁 Estructura
+
+
+## 🛠️ Tech Stack & Tecnologías Utilizadas
+
+- **Backend:** Python | Django | Django REST Framework 
+- **Frontend:** HTML, CSS, JavaScript, Django Templates.
+- **Base de Datos:** SQLite
+- **Integraciones & Pagos:** Mercado Pago API
+- **Despliegue & Contenedores:** Docker, Render
+
 ## 📁 Estructura del Proyecto
 
 ```text
