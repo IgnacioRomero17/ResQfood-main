@@ -2,8 +2,7 @@ ResQFood
 
 ResQFood es una plataforma web para reducir el desperdicio de alimentos, conectando comercios con consumidores para ofrecer productos y packs con descuento antes de que sean descartados.
 
-🚀 ### Funcionalidades
-```
+### Funcionalidades
 Registro y autenticación de usuarios.
 Marketplace de comercios y packs.
 Búsqueda, filtros y ordenamiento.
@@ -23,9 +22,10 @@ Tests automatizados.
 - **Integraciones & Pagos:** Mercado Pago API
 - **Despliegue & Contenedores:** Docker, Render
 
+
 ## 📁 Estructura del Proyecto
 
-```text
+```
 ResQFood/
 ├── accounts/          # Usuarios y autenticación
 ├── api/               # Módulos y endpoints API REST
@@ -40,6 +40,7 @@ ResQFood/
 ├── manage.py          # Script de gestión de Django
 └── requirements.txt   # Dependencias del proyecto
 ```
+
 ⚙️ Instalación
 git clone <URL_DEL_REPOSITORIO>
 cd ResQFood
@@ -50,7 +51,4 @@ python -m venv venv
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
-
-La aplicación estará disponible en http://127.0.0.1:8000/.
-
 Las credenciales y variables sensibles se gestionan mediante .env y no se incluyen en el repositorio.
